@@ -1,0 +1,27 @@
+.comment-dialog {
+    padding: 12px;
+    padding-left: 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.comment-dialog .MuiChip-root {
+    margin-bottom: 12px; /* Adds space between the chip and the dialog */
+    cursor: pointer;    /* Makes the chip appear clickable */
+    background-color: #FF7F50; /* Adds color to the chip to make it stand out */
+}
+
+.comment-dialog .MuiDialog-root {
+    padding: 16px;  /* Add padding inside the dialog */
+    border-radius: 8px; /* Optional: Rounded corners for the dialog */
+}
+
+.comment-dialog .MuiDialogContent-root {
+    padding: 20px;  /* Spacing inside the dialog content */
+}
+
+.comment-dialog .MuiTextField-root {
+    margin-top: 10px;  /* Adds some spacing above the input field */
+    border-radius: 4px; /* Smoothens the edges of the text input */
+}
