@@ -1,3 +1,13 @@
 # CS6314-Project8
 
-Use the commands 'nodemon webServer.js', 'npm run build', and 'node loadDatabase.js' before trying to test the code.
+# Install node modules
+**npm install**
+
+# Starting the web server 
+**nodemon webServer.js**
+
+# Loading the dataset 
+**node loadDatabase.js**
+
+# Building the project
+**npm run build**
