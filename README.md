@@ -1,5 +1,3 @@
-# CS6314-Project8
-
 # Install node modules
 **npm install**
 
