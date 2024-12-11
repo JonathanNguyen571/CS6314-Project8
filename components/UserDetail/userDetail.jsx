@@ -9,28 +9,40 @@ import "./userDetail.css";
  */
 function UserDetail({ loginUser, onUserNameChange }) {
   const [user, setUser] = useState(null);
+  const [recentPhoto, setRecentPhoto] = useState(null);
+  const [mostCommentedPhoto, setMostCommentedPhoto] = useState(null);
   const { userId } = useParams(); // Get the userId from the URL parameters
+  const photoLink = "http://localhost:3000/photo-share.html#/photos/" + userId;
+
 
   // Fetch user data using axios
-  const fetchData = (url) => {
+  const fetchData = (url, setter) => {
     const token = loginUser?.token; // Assuming loginUser contains the auth token
     axios
       .get(url, { headers: { Authorization: `Bearer ${token}` } })
       .then((response) => {
-        setUser(response.data);
-        onUserNameChange(`${response.data.first_name} ${response.data.last_name}`);
-        console.log("** UserDetail: fetched user detail **");
+        setter(response.data);
       })
       .catch((error) => {
-        console.log("** Error fetching user data: **", error.message);
+        console.log("** Error fetching data: **", error.message);
       });
   };
 
-  // Fetch user data when component mounts or when userId changes
+  // Fetch user details
   useEffect(() => {
     if (userId) {
-      const url = `http://localhost:3000/user/${userId}`;
-      fetchData(url);
+      const userUrl = `http://localhost:3000/user/${userId}`;
+      fetchData(userUrl, (data) => {
+        setUser(data);
+        onUserNameChange(`${data.first_name} ${data.last_name}`);
+      });
+
+      // Fetch recent and most-commented photos
+      const detailsUrl = `http://localhost:3000/user/details/${userId}`;
+      fetchData(detailsUrl, (data) => {
+        setRecentPhoto(data.recentPhoto);
+        setMostCommentedPhoto(data.mostCommentedPhoto);
+      });
     }
   }, [userId]); // Dependency array ensures re-fetching when userId changes
 
@@ -42,7 +54,7 @@ function UserDetail({ loginUser, onUserNameChange }) {
   // Render user details if data is available
   return (
     user && (
-      <Grid container>
+      <Grid container spacing={2}>
         <Grid item xs={12}>
           <Typography color="textSecondary">Name:</Typography>
           <Typography variant="h6" gutterBottom>
@@ -61,6 +73,37 @@ function UserDetail({ loginUser, onUserNameChange }) {
             {user.occupation || "No occupation specified"}
           </Typography>
         </Grid>
+
+        {recentPhoto && (
+          <Grid item xs={12}>
+            <Typography variant="h6">Most Recent Photo</Typography>
+            <img
+              src={`/images/${recentPhoto.file_name}`}
+              alt="Recent Photo"
+              className="thumbnail"
+              onClick={() => window.location.href = photoLink}
+              />
+            <Typography color="textSecondary">
+              Uploaded: {new Date(recentPhoto.date_time).toLocaleString()}
+            </Typography>
+          </Grid>
+        )}
+
+        {mostCommentedPhoto && (
+          <Grid item xs={12}>
+            <Typography variant="h6">Most Commented Photo</Typography>
+            <img
+              src={`/images/${mostCommentedPhoto.file_name}`}
+              alt="Most Commented Photo"
+              className="thumbnail"
+              onClick={() => window.location.href = photoLink}
+              />
+            <Typography color="textSecondary">
+              Comments: {mostCommentedPhoto.commentCount}
+            </Typography>
+          </Grid>
+        )}
+
         <Grid item xs={4} />
         <Grid item xs={4}>
           <Button
