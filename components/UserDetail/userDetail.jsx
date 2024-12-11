@@ -11,15 +11,14 @@ function UserDetail({ loginUser, onUserNameChange }) {
   const [user, setUser] = useState(null);
   const [recentPhoto, setRecentPhoto] = useState(null);
   const [mostCommentedPhoto, setMostCommentedPhoto] = useState(null);
+  const [mentionedPhotos, setMentionedPhotos] = useState([]); // State for mentioned photos
   const { userId } = useParams(); // Get the userId from the URL parameters
-  const photoLink = "http://localhost:3000/photo-share.html#/photos/" + userId;
-
+  const photoLink = `/photo-share.html#/photos/${userId}`;
 
   // Fetch user data using axios
   const fetchData = (url, setter) => {
-    const token = loginUser?.token; // Assuming loginUser contains the auth token
-    axios
-      .get(url, { headers: { Authorization: `Bearer ${token}` } })
+    const token = loginUser?.token; 
+    axios.get(url, { headers: { Authorization: `Bearer ${token}` } })
       .then((response) => {
         setter(response.data);
       })
@@ -28,28 +27,64 @@ function UserDetail({ loginUser, onUserNameChange }) {
       });
   };
 
+
   // Fetch user details
   useEffect(() => {
     if (userId) {
-      const userUrl = `http://localhost:3000/user/${userId}`;
+      const userUrl = `/user/${userId}`;
       fetchData(userUrl, (data) => {
         setUser(data);
         onUserNameChange(`${data.first_name} ${data.last_name}`);
       });
-
-      // Fetch recent and most-commented photos
-      const detailsUrl = `http://localhost:3000/user/details/${userId}`;
+  
+      const detailsUrl = `/user/details/${userId}`;
       fetchData(detailsUrl, (data) => {
         setRecentPhoto(data.recentPhoto);
         setMostCommentedPhoto(data.mostCommentedPhoto);
       });
-    }
-  }, [userId]); // Dependency array ensures re-fetching when userId changes
 
+      const mentionsUrl = `/userMentions/${userId}`;
+      fetchData(mentionsUrl, (data) => {
+        setMentionedPhotos(data.mentionedPhotos);
+      });
+
+    }
+  }, [userId]); 
+  
   // Redirect to login page if not logged in
   if (!loginUser) {
     return <Navigate to={`/login-register`} />;
   }
+
+  // Render mentioned photos
+  const renderMentionedPhotos = () => {
+    if (mentionedPhotos.length === 0) {
+      return <Typography color="textSecondary">No mentions available.</Typography>;
+    }
+
+    return (
+      <Grid container spacing={2}>
+        <Typography variant="h6" gutterBottom>
+          Photos where the user is mentioned:
+        </Typography>
+        {mentionedPhotos.map((photo, index) => (
+          <Grid item xs={12} sm={6} key={index}>
+            <img
+              src={`/images/${photo.file_name}`}
+              alt="Mentioned Photo"
+              className="thumbnail"
+            />
+            <Typography color="textSecondary">
+              Owner:{" "}
+              <Link to={`/users/${photo.owner_id}`}>
+                {photo.owner_name}
+              </Link>
+            </Typography>
+          </Grid>
+        ))}
+      </Grid>
+    );
+  };
 
   // Render user details if data is available
   return (
@@ -81,8 +116,8 @@ function UserDetail({ loginUser, onUserNameChange }) {
               src={`/images/${recentPhoto.file_name}`}
               alt="Recent Photo"
               className="thumbnail"
-              onClick={() => window.location.href = photoLink}
-              />
+              onClick={() => (window.location.href = photoLink)}
+            />
             <Typography color="textSecondary">
               Uploaded: {new Date(recentPhoto.date_time).toLocaleString()}
             </Typography>
@@ -96,13 +131,17 @@ function UserDetail({ loginUser, onUserNameChange }) {
               src={`/images/${mostCommentedPhoto.file_name}`}
               alt="Most Commented Photo"
               className="thumbnail"
-              onClick={() => window.location.href = photoLink}
-              />
+              onClick={() => (window.location.href = photoLink)}
+            />
             <Typography color="textSecondary">
               Comments: {mostCommentedPhoto.commentCount}
             </Typography>
           </Grid>
         )}
+
+        <Grid item xs={12}>
+          {renderMentionedPhotos()}
+        </Grid>
 
         <Grid item xs={4} />
         <Grid item xs={4}>

@@ -56,7 +56,7 @@ function TopBar({ loginUser, onLoginUserChange, onPhotoUpload, userName }) {
     <AppBar className="cs6314-topbar-appBar" position="fixed">
       <Toolbar>
         <Typography variant="h5" style={{ flexGrow: 1 }}>
-          Fakebook {loginUser && `ver: ${version}`}
+          Photo App {loginUser && `ver: ${version}`}
         </Typography>
 
         <Typography variant="h5" style={{ flexGrow: 1 }}>

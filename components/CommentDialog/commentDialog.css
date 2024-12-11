@@ -14,7 +14,7 @@
 
 .comment-dialog .MuiDialog-root {
     padding: 16px;  /* Add padding inside the dialog */
-    border-radius: 8px; /* Optional: Rounded corners for the dialog */
+    border-radius: 8px; /* Rounded corners for the dialog */
 }
 
 .comment-dialog .MuiDialogContent-root {

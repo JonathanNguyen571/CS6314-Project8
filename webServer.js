@@ -456,6 +456,69 @@ app.get('/user/details/:id', requireLogin, async (request, response) => {
 });
 
 
+app.get('/userMentions/:id', async function (request, response) {
+  try {
+    const userId = request.params.id;
+
+    // Find photos mentioning the user
+    const photos = await Photo.find({ mentions: userId });
+    if (!photos || photos.length === 0) {
+      return response.status(404).send('No photos found mentioning the user.');
+    }
+
+    // Gather details for each photo
+    const mentionedPhotos = await Promise.all(
+      photos.map(async (photo) => {
+        const owner = await User.findById(photo.user_id);
+        return {
+          file_name: photo.file_name,
+          owner_id: photo.user_id,
+          owner_name: owner ? `${owner.first_name} ${owner.last_name}` : 'Unknown',
+        };
+      })
+    );
+
+    response.status(200).send(mentionedPhotos);
+  } catch (err) {
+    console.error('Error in /userMentions/:id:', err);
+    response.status(500).send('Internal server error.');
+  }
+});
+
+
+
+app.post('/photosOfUser/mentions', async function (request, response) {
+  try {
+    const { user_id_arr: mentionedUsersIdArr, photoId } = request.body;
+
+    // Ensure required fields are present
+    if (!photoId || !mentionedUsersIdArr || !Array.isArray(mentionedUsersIdArr)) {
+      return response.status(400).send('Invalid request body.');
+    }
+
+    const photo = await Photo.findById(photoId);
+    if (!photo) {
+      return response.status(404).send('Photo not found.');
+    }
+
+    // Ensure mentions are unique
+    const uniqueMentions = new Set(photo.mentions);
+    mentionedUsersIdArr.forEach((userId) => uniqueMentions.add(userId));
+
+    photo.mentions = Array.from(uniqueMentions);
+    await photo.save();
+
+    response.status(200).send('Mentions successfully registered.');
+  } catch (err) {
+    console.error('Error in /photosOfUser/mentions:', err);
+    response.status(500).send('Internal server error.');
+  }
+});
+
+
+
+
+
 app.listen(3000, function () {
   console.log(`Listening at http://localhost:3000 exporting the directory ${__dirname}`);
 });

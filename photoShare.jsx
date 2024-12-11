@@ -5,9 +5,9 @@ import { Grid, Paper } from '@mui/material';
 import './styles/main.css';
 
 // Import necessary components
-import TopBar from './components/topBar/topBar';
-import UserDetail from './components/userDetail/userDetail';
-import UserList from './components/userList/userList';
+import TopBar from './components/TopBar/topBar';
+import UserDetail from './components/UserDetail/userDetail';
+import UserList from './components/UserList/userList';
 import UserPhotos from './components/userPhotos/userPhotos';
 import LoginRegister from './components/LoginRegister/loginRegister';
 
@@ -58,7 +58,7 @@ function PhotoShare() {
               loginUser={loginUser}
             />
           </Grid>
-          <div className="cs142-main-topbar-buffer" />
+          <div className="cs6314-main-topbar-buffer" />
 
           {/* Sidebar View */}
           <Grid item sm={3}>
@@ -78,7 +78,7 @@ function PhotoShare() {
           {/* Main View */}
           <Grid item sm={9}>
             <Paper
-              className="cs142-main-grid-item"
+              className="cs6314-main-grid-item"
               elevation={3}
               style={{
                 backgroundColor: "#abd1c6",
