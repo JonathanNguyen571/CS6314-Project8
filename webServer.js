@@ -368,6 +368,94 @@ app.get("/photosOfUser/:id", requireLogin, async function (request, response) {
   }
 });
 
+app.get('/user/details/:id', requireLogin, async (request, response) => {
+  const userId = request.params.id;
+
+  try {
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+          return response.status(400).send("Invalid user ID format");
+      }
+
+      // Fetch all photos for the user
+      const photos = await Photo.find({ user_id: userId }).select('_id file_name date_time comments');
+
+      if (!photos.length) {
+          return response.status(200).json({
+              recentPhoto: null,
+              mostCommentedPhoto: null
+          });
+      }
+
+      // Determine the most recent photo
+      const recentPhoto = photos.reduce((latest, photo) =>
+          (!latest || photo.date_time > latest.date_time) ? photo : latest, null
+      );
+
+      // Determine the most commented photo
+      const mostCommentedPhoto = photos.reduce((most, photo) =>
+          (!most || (photo.comments.length > most.comments.length)) ? photo : most, null
+      );
+
+      // Format the response
+      return response.status(200).json({
+          recentPhoto: recentPhoto
+              ? { _id: recentPhoto._id, file_name: recentPhoto.file_name, date_time: recentPhoto.date_time }
+              : null,
+          mostCommentedPhoto: mostCommentedPhoto
+              ? { _id: mostCommentedPhoto._id, file_name: mostCommentedPhoto.file_name, commentCount: mostCommentedPhoto.comments.length }
+              : null
+      });
+  } catch (error) {
+      console.error("Error fetching user details:", error);
+      return response.status(500).send("Internal server error");
+  }
+});
+
+
+app.get('/user/details/:id', requireLogin, async (request, response) => {
+    const userId = request.params.id;
+
+    try {
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return response.status(400).send("Invalid user ID format");
+        }
+
+        // Fetch all photos for the user
+        const photos = await Photo.find({ user_id: userId }).select('_id file_name date_time comments');
+
+        if (!photos.length) {
+            return response.status(200).json({
+                recentPhoto: null,
+                mostCommentedPhoto: null
+            });
+        }
+
+        // Determine the most recent photo
+        const recentPhoto = photos.reduce((latest, photo) =>
+            (!latest || photo.date_time > latest.date_time) ? photo : latest, null
+        );
+
+        // Determine the most commented photo
+        const mostCommentedPhoto = photos.reduce((most, photo) =>
+            (!most || (photo.comments.length > most.comments.length)) ? photo : most, null
+        );
+
+        // Format the response
+        return response.status(200).json({
+            recentPhoto: recentPhoto
+                ? { _id: recentPhoto._id, file_name: recentPhoto.file_name, date_time: recentPhoto.date_time }
+                : null,
+            mostCommentedPhoto: mostCommentedPhoto
+                ? { _id: mostCommentedPhoto._id, file_name: mostCommentedPhoto.file_name, commentCount: mostCommentedPhoto.comments.length }
+                : null
+        });
+    } catch (error) {
+        console.error("Error fetching user details:", error);
+        return response.status(500).send("Internal server error");
+    }
+});
+
+
 app.listen(3000, function () {
   console.log(`Listening at http://localhost:3000 exporting the directory ${__dirname}`);
 });
