@@ -1,27 +1,30 @@
 import React from "react";
-import { Button, Dialog, DialogContent, DialogContentText, TextField, DialogActions, Chip, Snackbar } from "@mui/material";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogContentText,
+  TextField,
+  DialogActions,
+  Chip,
+  Snackbar,
+} from "@mui/material";
 import "./commentDialog.css";
 import axios from "axios";
 
-/**
- * CommentDialog component for adding comments to photos in CS142 project #7.
- * Handles opening the dialog, submitting comments, mentions, and notifying the parent component to re-fetch data.
- * 
- * @param {function} this.props.onCommentSumbit - Callback to notify parent to re-fetch data.
- * @param {string} this.props.photo_id - The photo ID being commented on.
- */
 export default class CommentDialog extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
-      open: false,           // Control the dialog visibility
-      comment: "",           // Store the user's comment
-      success: false,        // To show success Snackbar
-      error: false,          // To show error Snackbar
-      users: [],             // List of all users for mentions
-      filteredUsers: [],     // Filtered list for dropdown
-      mentionStart: null,    // Start position of the mention
-      showDropdown: false,   // Control visibility of the mention dropdown
+    this.state = {
+      open: false, // Control the dialog visibility
+      comment: "", // Store the user's comment
+      success: false, // To show success Snackbar
+      error: false, // To show error Snackbar
+      users: [], // List of all users for mentions
+      filteredUsers: [], // Filtered list for dropdown
+      mentionStart: null, // Start position of the mention
+      showDropdown: false, // Control visibility of the mention dropdown
+      mentionedUsersIdArr: [], // Array of mentioned users' IDs
     };
   }
 
@@ -41,7 +44,13 @@ export default class CommentDialog extends React.Component {
   handleClickOpen = () => this.setState({ open: true });
 
   // Close the comment dialog
-  handleClickClose = () => this.setState({ open: false, comment: "", showDropdown: false });
+  handleClickClose = () =>
+    this.setState({
+      open: false,
+      comment: "",
+      showDropdown: false,
+      mentionedUsersIdArr: [],
+    });
 
   // Reflect comment changes in the state
   handleCommentChange = (e) => {
@@ -51,7 +60,11 @@ export default class CommentDialog extends React.Component {
     // Detect if user is typing a mention
     const lastChar = value[value.length - 1];
     if (lastChar === "@") {
-      this.setState({ mentionStart: value.length, showDropdown: true, filteredUsers: users });
+      this.setState({
+        mentionStart: value.length,
+        showDropdown: true,
+        filteredUsers: users,
+      });
     } else if (mentionStart !== null) {
       // Extract the mention text
       const mentionText = value.slice(mentionStart);
@@ -67,33 +80,59 @@ export default class CommentDialog extends React.Component {
 
   // Handle selection from the mention dropdown
   handleMentionSelect = (user) => {
-    const { comment, mentionStart } = this.state;
+    const { comment, mentionStart, mentionedUsersIdArr } = this.state;
     const fullName = `${user.first_name} ${user.last_name}`;
 
     // Replace the mention text with the selected user
     const updatedComment = `${comment.slice(0, mentionStart - 1)}@${fullName} ${comment.slice(mentionStart)}`;
-    this.setState({ 
-      comment: updatedComment, 
-      mentionStart: null, 
-      showDropdown: false, 
+
+    // Update mentioned users
+    if (!mentionedUsersIdArr.includes(user._id)) {
+      mentionedUsersIdArr.push(user._id);
+    }
+
+    this.setState({
+      comment: updatedComment,
+      mentionStart: null,
+      showDropdown: false,
+      mentionedUsersIdArr,
     });
   };
 
   // Handle the comment submission
   handleCommentSubmit = () => {
-    const { comment } = this.state;
-    this.setState({ open: false, comment: "" }); // Close dialog and clear comment
+    const { comment, mentionedUsersIdArr } = this.state;
+
+    if (!comment.trim()) {
+      this.setState({ error: true });
+      return;
+    }
+
+    this.setState({ open: false, comment: "", mentionedUsersIdArr: [] }); // Close dialog and clear comment
 
     // Post the comment to the server
     axios
       .post(`/commentsOfPhoto/${this.props.photo_id}`, { comment })
       .then(() => {
+        // Post mentions if there are any
+        if (mentionedUsersIdArr.length > 0) {
+          axios
+            .post("/photosOfUser/mentions", {
+              photoId: this.props.photo_id,
+              user_id_arr: mentionedUsersIdArr,
+            })
+            .then(() => console.log("Mentions successfully updated."))
+            .catch((err) =>
+              console.error("Error updating mentions:", err)
+            );
+        }
+
         this.setState({ success: true }); // Show success message
-        this.props.onCommentSumbit();     // Notify parent to re-fetch data
+        this.props.onCommentSumbit(); // Notify parent to re-fetch data
       })
       .catch((error) => {
         console.error("Comment Submission Error:", error);
-        this.setState({ error: true });    // Show error message
+        this.setState({ error: true }); // Show error message
       });
   };
 
@@ -139,8 +178,12 @@ export default class CommentDialog extends React.Component {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={this.handleClickClose} color="primary">Cancel</Button>
-            <Button onClick={this.handleCommentSubmit} color="primary">Submit</Button>
+            <Button onClick={this.handleClickClose} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={this.handleCommentSubmit} color="primary">
+              Submit
+            </Button>
           </DialogActions>
         </Dialog>
 
