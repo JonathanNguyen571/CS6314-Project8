@@ -88,6 +88,7 @@ Promise.all(removePromises)
           file_name: photo.file_name,
           date_time: photo.date_time,
           user_id: mapFakeId2RealId[photo.user_id],
+          mentions: []
         })
           .then(function (photoObj) {
             photo.objectID = photoObj._id;
