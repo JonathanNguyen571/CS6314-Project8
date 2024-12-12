@@ -55,8 +55,8 @@ export default class CommentDialog extends React.Component {
   // Reflect comment changes in the state
   handleCommentChange = (e) => {
     const { value } = e.target;
-    const { users, mentionStart } = this.state;
-
+    const { users, mentionStart, mentionedUsersIdArr } = this.state;
+  
     // Detect if user is typing a mention
     const lastChar = value[value.length - 1];
     if (lastChar === "@") {
@@ -74,9 +74,18 @@ export default class CommentDialog extends React.Component {
       });
       this.setState({ filteredUsers, showDropdown: filteredUsers.length > 0 });
     }
-
-    this.setState({ comment: value });
+  
+    // Validate mentionedUsersIdArr against actual mentions in the comment
+    const mentionedUsers = mentionedUsersIdArr.filter((id) =>
+      users.some((user) => {
+        const fullName = `${user.first_name} ${user.last_name}`;
+        return value.includes(`@${fullName}`) && user._id === id;
+      })
+    );
+  
+    this.setState({ comment: value, mentionedUsersIdArr: mentionedUsers });
   };
+  
 
   // Handle selection from the mention dropdown
   handleMentionSelect = (user) => {
