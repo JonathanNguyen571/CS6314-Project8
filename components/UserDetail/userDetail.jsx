@@ -73,30 +73,41 @@ function UserDetail({ loginUser, onUserNameChange }) {
 
     return (
       <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <Typography variant="h6" gutterBottom>
-            Photos where the user is mentioned:
-          </Typography>
-        </Grid>
-        {mentionedPhotos.map((photo, index) => (
-          <Grid item xs={12} sm={6} key={index}>
-            <img
-              src={`/images/${photo.file_name}`}
-              alt="Mentioned Photo"
-              className="thumbnail"
-            />
-            <Typography color="textSecondary">
-              Owner:{" "}
-              <Link to={`/users/${photo.owner_id}`}>
-                {photo.owner_name}
-              </Link>
-            </Typography>
-          </Grid>
-        ))}
-      </Grid>
+  <Grid item xs={12}>
+    <Typography variant="h6" gutterBottom>
+      Photos where the user is mentioned:
+    </Typography>
+  </Grid>
+  {mentionedPhotos.map((photo, index) => (
+    <Grid item xs={12} sm={6} key={index}>
+      <img
+        src={`/images/${photo.file_name}`}
+        alt="Mentioned Photo"
+        className="thumbnail"
+      />
+      <Typography color="textSecondary">
+        Owner:{" "}
+        <Link to={`/users/${photo.owner_id}`}>
+          {photo.owner_name}
+        </Link>
+      </Typography>
+      {/* Add Delete Button */}
+      <Button
+        variant="outlined"
+        color="secondary"
+        size="small"
+        onClick={() => handleDeleteComment(photo.comment_id)} // Call delete handler
+        sx={{ mt: 1 }}
+      >
+        Delete Comment
+      </Button>
+    </Grid>
+  ))}
+</Grid>
+
     );
   };
-
+  
   // Render user details if data is available
   return (
     user && (

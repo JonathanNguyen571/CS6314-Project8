@@ -563,27 +563,52 @@ app.delete("/photos/:id", requireLogin, async function(request, response) {
 })
 
 // This id corresponds to the comment_id but we need to find the corresponding photo
-app.delete("/comments/:id", requireLogin, async function(request, response) {
+app.delete("/comments/:id", requireLogin, async function (request, response) {
   const id = request.params.id;
+
   try {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return response.status(400).send("Invalid comment ID format");
     }
 
-    // Find the photo that has this comment_id
-    const photo = await Photo.findOne({comments: {$elemMatch: {_id: id}}})
-    if (!photo) return response.status(404).send(`Photo with comment_id: ${id} not found`);
+    // Find the photo containing the comment
+    const photo = await Photo.findOne({ comments: { $elemMatch: { _id: id } } });
+    if (!photo) {
+      return response.status(404).send(`Photo with comment_id: ${id} not found`);
+    }
 
-    // Delete the comment from the photo
+    // Find the comment to delete
+    const commentToDelete = photo.comments.find(comment => comment._id.toString() === id);
+    if (!commentToDelete) {
+      return response.status(404).send("Comment not found in photo");
+    }
+
+    // Remove the comment
     photo.comments = photo.comments.filter(comment => comment._id.toString() !== id);
+
+    // Update the mentions array
+    const updatedMentions = new Set();
+
+    // Recalculate mentions from remaining comments
+    photo.comments.forEach(comment => {
+      if (comment.mentions) {
+        comment.mentions.forEach(userId => updatedMentions.add(userId));
+      }
+    });
+
+    // Assign recalculated mentions back to photo
+    photo.mentions = Array.from(updatedMentions);
+
+    // Save changes to the photo
     await photo.save();
 
-    return response.status(200).send();
+    return response.status(200).send({ message: "Comment and mentions updated successfully." });
   } catch (error) {
     console.error("Error deleting comment:", error);
     return response.status(500).send("Internal server error");
   }
-})
+});
+
 
 app.delete('/user/me', requireLogin, async function(request, response) {
   const id = request.session.userIdRecord;
