@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { List, Divider, Typography, Grid, Avatar, Card, CardHeader, CardMedia, CardContent } from "@mui/material";
+import { List, Divider, Typography, Grid, Avatar, Card, CardHeader, CardMedia, CardContent, Button } from "@mui/material";
 import "./userPhotos.css";
 import axios from "axios";
 import CommentDialog from "../CommentDialog/commentDialog";
@@ -24,6 +24,21 @@ function UserPhotos({ loginUser, photoIsUploaded, onUserNameChange }) {
     } catch (error) {
       console.error("Error fetching data:", error);
       setLoading(false);
+    }
+  };
+
+
+  const handleDeletePhoto = async (photoId) => {
+    if (confirm("Are you sure you want to delete this photo?")) {
+      await axios.delete(`/photos/${photoId}`);
+      fetchPhotosAndUser();
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (confirm("Are you sure you want to delete this comment?")) {
+      await axios.delete(`/comments/${commentId}`);
+      fetchPhotosAndUser();
     }
   };
 
@@ -63,6 +78,25 @@ function UserPhotos({ loginUser, photoIsUploaded, onUserNameChange }) {
                   <Divider />
                 </Typography>
               )}
+              {
+                loginUser._id === user._id && (
+                  <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    sx={{
+                      mt: 1,
+                      mb: 2,
+                      '&:hover': {
+                        backgroundColor: '#d32f2f'
+                      }
+                    }}
+                    onClick={() => handleDeletePhoto(photo._id)}
+                  >
+                    Delete Photo
+                  </Button>
+                )
+              }
               {photo.comments?.map((c) => (
                 <List key={c._id}>
                   <Typography variant="subtitle2">
@@ -72,6 +106,22 @@ function UserPhotos({ loginUser, photoIsUploaded, onUserNameChange }) {
                     {c.date_time}
                   </Typography>
                   <Typography variant="body1">{`"${c.comment}"`}</Typography>
+                  {loginUser._id === c.user._id && (
+                    <Button
+                      variant="contained"
+                      color="error"
+                      size="small"
+                      sx={{
+                        mt: 1,
+                        '&:hover': {
+                          backgroundColor: '#d32f2f'
+                        }
+                      }}
+                      onClick={() => handleDeleteComment(c._id)}
+                    >
+                      Delete Comment
+                    </Button>
+                  )}
                 </List>
               ))}
               <CommentDialog onCommentSumbit={() => fetchPhotosAndUser()} photo_id={photo._id} />
@@ -79,8 +129,7 @@ function UserPhotos({ loginUser, photoIsUploaded, onUserNameChange }) {
           </Card>
         </Grid>
       ))}
-    </Grid>
-  );
+    </Grid>)
 }
 
 export default UserPhotos;

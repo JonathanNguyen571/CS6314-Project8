@@ -55,8 +55,8 @@ mongoose.connect("mongodb://127.0.0.1/project6", {
 });
 
 app.use(session({
-  secret: "secretKey", 
-  resave: false, 
+  secret: "secretKey",
+  resave: false,
   saveUninitialized: false
 }));
 
@@ -161,7 +161,7 @@ app.post('/commentsOfPhoto/:photo_id', hasSessionRecord, async (request, respons
 
 
 
-// Deals with photo uploading 
+// Deals with photo uploading
 app.post('/photos/new', hasSessionRecord, (request, response) => {
   processFormBody(request, response, err => {
       if (err || !request.file) {
@@ -515,8 +515,75 @@ app.post('/photosOfUser/mentions', async function (request, response) {
   }
 });
 
+app.delete("/photos/:id", requireLogin, async function(request, response) {
+  const id = request.params.id;
+  try {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return response.status(400).send("Invalid photo ID format");
+    }
 
+    const photo = await Photo.findById(id);
+    if (!photo) return response.status(404).send(`Photo with _id: ${id} not found`);
 
+    if (!photo.user_id.equals(request.session.userIdRecord)) {
+      console.log("User with id: ", request.session.userIdRecord, "is not authorized to delete photo with id: ", id);
+      return response.status(403).send("You are not authorized to delete this photo");
+    }
+
+    await Photo.deleteOne({ _id: id });
+    console.log("Photo deleted successfully");
+
+    return response.status(200).send();
+  } catch (error) {
+    console.error("Error deleting photo:", error);
+    return response.status(500).send("Internal server error");
+  }
+})
+
+// This id corresponds to the comment_id but we need to find the corresponding photo
+app.delete("/comments/:id", requireLogin, async function(request, response) {
+  const id = request.params.id;
+  try {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return response.status(400).send("Invalid comment ID format");
+    }
+
+    // Find the photo that has this comment_id
+    const photo = await Photo.findOne({comments: {$elemMatch: {_id: id}}})
+    if (!photo) return response.status(404).send(`Photo with comment_id: ${id} not found`);
+
+    // Delete the comment from the photo
+    photo.comments = photo.comments.filter(comment => comment._id.toString() !== id);
+    await photo.save();
+
+    return response.status(200).send();
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    return response.status(500).send("Internal server error");
+  }
+})
+
+app.delete('/user/me', requireLogin, async function(request, response) {
+  const id = request.session.userIdRecord;
+
+  // Delete all photos associated with the user
+  await Photo.deleteMany({user_id: id});
+
+  // Delete all comments associated with the user
+  const photos = await Photo.find({ comments: {$elemMatch: {user_id: id}} });
+  for (const photo of photos) {
+    photo.comments = photo.comments.filter(comment => comment.user_id.toString() !== id);
+    await photo.save();
+  }
+
+  // Delete the user
+  await User.deleteOne({_id: id});
+  request.session.destroy(() => {
+    return response.status(200).send();
+  });
+
+  return response.status(200).send();
+})
 
 
 app.listen(3000, function () {

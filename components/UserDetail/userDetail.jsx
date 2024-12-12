@@ -17,7 +17,7 @@ function UserDetail({ loginUser, onUserNameChange }) {
 
   // Fetch user data using axios
   const fetchData = (url, setter) => {
-    const token = loginUser?.token; 
+    const token = loginUser?.token;
     axios.get(url, { headers: { Authorization: `Bearer ${token}` } })
       .then((response) => {
         setter(response.data);
@@ -26,6 +26,14 @@ function UserDetail({ loginUser, onUserNameChange }) {
         console.log("** Error fetching data: **", error.message);
       });
   };
+
+  async function handleDeleteUser() {
+    if (confirm("Are you sure you want to delete this user?")) {
+      axios.delete(`/user/me`).then(() => {
+        window.location = `/photo-share.html#/login-register`
+      });
+    }
+  }
 
 
   // Fetch user details
@@ -36,7 +44,7 @@ function UserDetail({ loginUser, onUserNameChange }) {
         setUser(data);
         onUserNameChange(`${data.first_name} ${data.last_name}`);
       });
-  
+
       const detailsUrl = `/user/details/${userId}`;
       fetchData(detailsUrl, (data) => {
         setRecentPhoto(data.recentPhoto);
@@ -49,8 +57,8 @@ function UserDetail({ loginUser, onUserNameChange }) {
       });
 
     }
-  }, [userId]); 
-  
+  }, [userId]);
+
   // Redirect to login page if not logged in
   if (!loginUser) {
     return <Navigate to={`/login-register`} />;
@@ -156,6 +164,19 @@ function UserDetail({ loginUser, onUserNameChange }) {
           </Button>
         </Grid>
         <Grid item xs={4} />
+
+        {loginUser._id === user._id && (
+          <Grid item xs={12} sx={{mt: 4, display: 'flex', justifyContent: 'center'}}>
+            <Button
+              variant="contained"
+              color="error"
+              size="large"
+              onClick={() => handleDeleteUser()}
+            >
+              Delete Account
+            </Button>
+          </Grid>
+        )}
       </Grid>
     )
   );
