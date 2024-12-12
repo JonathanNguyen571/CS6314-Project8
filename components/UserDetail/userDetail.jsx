@@ -24,6 +24,7 @@ function UserDetail({ loginUser, onUserNameChange }) {
       })
       .catch((error) => {
         console.log("** Error fetching data: **", error.message);
+        setter([])
       });
   };
 
@@ -45,7 +46,7 @@ function UserDetail({ loginUser, onUserNameChange }) {
 
       const mentionsUrl = `/userMentions/${userId}`;
       fetchData(mentionsUrl, (data) => {
-        setMentionedPhotos(data.mentionedPhotos);
+        setMentionedPhotos(data);
       });
 
     }
@@ -64,9 +65,11 @@ function UserDetail({ loginUser, onUserNameChange }) {
 
     return (
       <Grid container spacing={2}>
-        <Typography variant="h6" gutterBottom>
-          Photos where the user is mentioned:
-        </Typography>
+        <Grid item xs={12}>
+          <Typography variant="h6" gutterBottom>
+            Photos where the user is mentioned:
+          </Typography>
+        </Grid>
         {mentionedPhotos.map((photo, index) => (
           <Grid item xs={12} sm={6} key={index}>
             <img
