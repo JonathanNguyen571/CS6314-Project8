@@ -247,8 +247,6 @@ app.post('/user', (request, response) => {
 });
 
 
-
-
 app.get("/", function (request, response) {
   response.send("Simple web server of files from " + __dirname);
 });
@@ -491,32 +489,36 @@ app.post('/photosOfUser/mentions', async function (request, response) {
   try {
     const { user_id_arr: mentionedUsersIdArr, photoId } = request.body;
 
-    // Ensure required fields are present
+    // Validate request body
     if (!photoId || !mentionedUsersIdArr || !Array.isArray(mentionedUsersIdArr)) {
+      console.error("Invalid request body:", request.body);
       return response.status(400).send('Invalid request body.');
     }
 
     const photo = await Photo.findById(photoId);
     if (!photo) {
+      console.error("Photo not found for ID:", photoId);
       return response.status(404).send('Photo not found.');
     }
 
-    // Ensure mentions are unique
-    const uniqueMentions = new Set(photo.mentions);
-    mentionedUsersIdArr.forEach((userId) => uniqueMentions.add(userId));
+    console.log("Photo before updating mentions:", photo);
 
-    photo.mentions = Array.from(uniqueMentions);
+    // Add unique user IDs to mentions array
+    const uniqueMentions = new Set(photo.mentions); // Existing mentions
+    mentionedUsersIdArr.forEach((userId) => {
+      uniqueMentions.add(userId);
+    });
+
+    photo.mentions = Array.from(uniqueMentions); // Convert Set back to Array
     await photo.save();
 
-    response.status(200).send('Mentions successfully registered.');
+    console.log("Photo after updating mentions:", photo);
+    response.status(200).json({ message: 'Mentions successfully registered.', mentions: photo.mentions });
   } catch (err) {
     console.error('Error in /photosOfUser/mentions:', err);
     response.status(500).send('Internal server error.');
   }
 });
-
-
-
 
 
 app.listen(3000, function () {
