@@ -72,6 +72,19 @@ function UserPhotos({ loginUser, photoIsUploaded, onUserNameChange }) {
             />
             <CardMedia component="img" image={`./images/${photo.file_name}`} alt="Photo" />
             <CardContent>
+              <Button
+                variant="outlined"
+                color="primary"
+                size="small"
+                onClick={async () => {
+                  await axios.post(`/photos/${photo._id}/like`);
+                  fetchPhotosAndUser();
+                }}
+                sx={{ mb: 2 }}
+              >
+                {photo.likes?.some(like => like.user_id === loginUser._id) ? 'Unlike' : 'Like'} ({photo.likes?.length || 0})
+              </Button>
+
               {photo.comments && (
                 <Typography variant="subtitle1">
                   Comments:

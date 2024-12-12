@@ -132,6 +132,21 @@ function UserDetail({ loginUser, onUserNameChange }) {
             <Typography color="textSecondary">
               Uploaded: {new Date(recentPhoto.date_time).toLocaleString()}
             </Typography>
+            <Button
+              variant="outlined"
+              color="primary"
+              size="small"
+              onClick={async () => {
+                await axios.post(`/photos/${recentPhoto._id}/like`);
+                fetchData(`/user/details/${userId}`, (data) => {
+                  setRecentPhoto(data.recentPhoto);
+                  setMostCommentedPhoto(data.mostCommentedPhoto);
+                });
+              }}
+              sx={{ mt: 1 }}
+            >
+              {recentPhoto.likes?.some(like => like.user_id === loginUser._id) ? 'Unlike' : 'Like'} ({recentPhoto.likes?.length || 0})
+            </Button>
           </Grid>
         )}
 
@@ -147,6 +162,21 @@ function UserDetail({ loginUser, onUserNameChange }) {
             <Typography color="textSecondary">
               Comments: {mostCommentedPhoto.commentCount}
             </Typography>
+            <Button
+              variant="outlined"
+              color="primary"
+              size="small"
+              onClick={async () => {
+                await axios.post(`/photos/${mostCommentedPhoto._id}/like`);
+                fetchData(`/user/details/${userId}`, (data) => {
+                  setRecentPhoto(data.recentPhoto);
+                  setMostCommentedPhoto(data.mostCommentedPhoto);
+                });
+              }}
+              sx={{ mt: 1 }}
+            >
+              {mostCommentedPhoto.likes?.some(like => like.user_id === loginUser._id) ? 'Unlike' : 'Like'} ({mostCommentedPhoto.likes?.length || 0})
+            </Button>
           </Grid>
         )}
 

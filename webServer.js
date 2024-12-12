@@ -45,6 +45,7 @@ const app = express();
 const User = require("./schema/user.js");
 const Photo = require("./schema/photo.js");
 const SchemaInfo = require("./schema/schemaInfo.js");
+const Like = require("./schema/likes.js");
 
 const processFormBody = multer({ storage: multer.memoryStorage() }).single("uploadedphoto");
 
@@ -343,11 +344,16 @@ app.get("/photosOfUser/:id", requireLogin, async function (request, response) {
     const users = await User.find({ _id: { $in: userIds } }).select('_id first_name last_name').lean();
     const userMap = Object.fromEntries(users.map(user => [user._id.toString(), user]));
 
-    const formattedPhotos = photos.map(photo => ({
+    const likes = await Promise.all(photos.map(photo =>
+      Like.find({ photo_id: photo._id })
+    ));
+
+    const formattedPhotos = photos.map((photo, index) => ({
       _id: photo._id,
       user_id: photo.user_id,
       file_name: photo.file_name,
       date_time: photo.date_time,
+      likes: likes[index],
       comments: photo.comments.map(comment => {
         const user = userMap[comment.user_id.toString()];
         return {
@@ -358,6 +364,9 @@ app.get("/photosOfUser/:id", requireLogin, async function (request, response) {
         };
       })
     }));
+
+    // Sort photos by number of likes
+    formattedPhotos.sort((a, b) => b.likes.length - a.likes.length);
 
     return response.status(200).json(formattedPhotos);
   } catch (error) {
@@ -389,18 +398,22 @@ app.get('/user/details/:id', requireLogin, async (request, response) => {
           (!latest || photo.date_time > latest.date_time) ? photo : latest, null
       );
 
+      const recentPhotoLikes = await Like.find({ photo_id: recentPhoto._id });
+
       // Determine the most commented photo
       const mostCommentedPhoto = photos.reduce((most, photo) =>
           (!most || (photo.comments.length > most.comments.length)) ? photo : most, null
       );
 
+      const mostCommentedPhotoLikes = await Like.find({ photo_id: mostCommentedPhoto._id });
+
       // Format the response
       return response.status(200).json({
           recentPhoto: recentPhoto
-              ? { _id: recentPhoto._id, file_name: recentPhoto.file_name, date_time: recentPhoto.date_time }
+              ? { _id: recentPhoto._id, file_name: recentPhoto.file_name, date_time: recentPhoto.date_time, likes: recentPhotoLikes }
               : null,
           mostCommentedPhoto: mostCommentedPhoto
-              ? { _id: mostCommentedPhoto._id, file_name: mostCommentedPhoto.file_name, commentCount: mostCommentedPhoto.comments.length }
+              ? { _id: mostCommentedPhoto._id, file_name: mostCommentedPhoto.file_name, commentCount: mostCommentedPhoto.comments.length, likes: mostCommentedPhotoLikes }
               : null
       });
   } catch (error) {
@@ -535,6 +548,10 @@ app.delete("/photos/:id", requireLogin, async function(request, response) {
       return response.status(403).send("You are not authorized to delete this photo");
     }
 
+    // Delete all likes associated with the photo
+    await Like.deleteMany({photo_id: id});
+
+    // Delete the photo
     await Photo.deleteOne({ _id: id });
     console.log("Photo deleted successfully");
 
@@ -587,6 +604,24 @@ app.delete('/user/me', requireLogin, async function(request, response) {
     return response.status(200).send();
   });
 
+  return response.status(200).send();
+})
+
+// Either like or unlike a photo
+app.post('/photos/:id/like', requireLogin, async function(request, response) {
+  const photoId = request.params.id;
+  if (!mongoose.Types.ObjectId.isValid(photoId)) {
+    return response.status(400).send("Invalid photo ID format");
+  }
+
+  const like = await Like.findOne({user_id: request.session.userIdRecord, photo_id: photoId});
+  // If the user has already liked the photo, unlike it
+  if (like) {
+    await Like.deleteOne({user_id: request.session.userIdRecord, photo_id: photoId});
+    return response.status(200).send();
+  }
+  // If the user has not liked the photo, like it
+  await Like.create({user_id: request.session.userIdRecord, photo_id: photoId});
   return response.status(200).send();
 })
 
