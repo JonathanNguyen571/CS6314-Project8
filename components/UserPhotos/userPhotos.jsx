@@ -27,16 +27,24 @@ function UserPhotos({ loginUser, photoIsUploaded, onUserNameChange }) {
     }
   };
 
+  const showConfirmationDialog = (message) => {
+    return new Promise((resolve) => {
+      const confirmed = window.confirm(message); 
+      resolve(confirmed);
+    });
+  };
 
   const handleDeletePhoto = async (photoId) => {
-    if (confirm("Are you sure you want to delete this photo?")) {
+    const userConfirmed = await showConfirmationDialog("Are you sure you want to delete this photo?");
+    if (userConfirmed) {
       await axios.delete(`/photos/${photoId}`);
       fetchPhotosAndUser();
     }
   };
-
+  
   const handleDeleteComment = async (commentId) => {
-    if (confirm("Are you sure you want to delete this comment?")) {
+    const userConfirmed = await showConfirmationDialog('Are you sure you want to delete this comment?');
+    if (userConfirmed) {
       await axios.delete(`/comments/${commentId}`);
       fetchPhotosAndUser();
     }
@@ -62,15 +70,23 @@ function UserPhotos({ loginUser, photoIsUploaded, onUserNameChange }) {
         <Grid item xs={6} key={photo._id}>
           <Card variant="outlined">
             <CardHeader
-              avatar={
+              avatar={(
                 <Avatar style={{ backgroundColor: "#FF7F50" }}>
                   {user.first_name[0]}
                 </Avatar>
-              }
-              title={<Link to={`/users/${user._id}`}>{`${user.first_name} ${user.last_name}`}</Link>}
+              )}
+              title={(
+                <Link to={`/users/${user._id}`}>
+                  {`${user.first_name} ${user.last_name}`}
+                </Link>
+              )}
               subheader={photo.date_time}
             />
-            <CardMedia component="img" image={`./images/${photo.file_name}`} alt="Photo" />
+            <CardMedia
+              component="img"
+              image={`./images/${photo.file_name}`}
+              alt="Photo"
+            />
             <CardContent>
               <Button
                 variant="outlined"
@@ -82,38 +98,38 @@ function UserPhotos({ loginUser, photoIsUploaded, onUserNameChange }) {
                 }}
                 sx={{ mb: 2 }}
               >
-                {photo.likes?.some(like => like.user_id === loginUser._id) ? 'Unlike' : 'Like'} ({photo.likes?.length || 0})
+                {photo.likes?.some((like) => like.user_id === loginUser._id) ? 'Unlike' : 'Like'} ({photo.likes?.length || 0})
               </Button>
-
+  
               {photo.comments && (
                 <Typography variant="subtitle1">
                   Comments:
                   <Divider />
                 </Typography>
               )}
-              {
-                loginUser._id === user._id && (
-                  <Button
-                    variant="contained"
-                    color="error"
-                    size="small"
-                    sx={{
-                      mt: 1,
-                      mb: 2,
-                      '&:hover': {
-                        backgroundColor: '#d32f2f'
-                      }
-                    }}
-                    onClick={() => handleDeletePhoto(photo._id)}
-                  >
-                    Delete Photo
-                  </Button>
-                )
-              }
+              {loginUser._id === user._id && (
+                <Button
+                  variant="contained"
+                  color="error"
+                  size="small"
+                  sx={{
+                    mt: 1,
+                    mb: 2,
+                    '&:hover': {
+                      backgroundColor: '#d32f2f',
+                    },
+                  }}
+                  onClick={() => handleDeletePhoto(photo._id)}
+                >
+                  Delete Photo
+                </Button>
+              )}
               {photo.comments?.map((c) => (
                 <List key={c._id}>
                   <Typography variant="subtitle2">
-                    <Link to={`/users/${c.user._id}`}>{`${c.user.first_name} ${c.user.last_name}`}</Link>
+                    <Link to={`/users/${c.user._id}`}>
+                      {`${c.user.first_name} ${c.user.last_name}`}
+                    </Link>
                   </Typography>
                   <Typography variant="caption" color="textSecondary" gutterBottom>
                     {c.date_time}
@@ -127,8 +143,8 @@ function UserPhotos({ loginUser, photoIsUploaded, onUserNameChange }) {
                       sx={{
                         mt: 1,
                         '&:hover': {
-                          backgroundColor: '#d32f2f'
-                        }
+                          backgroundColor: '#d32f2f',
+                        },
                       }}
                       onClick={() => handleDeleteComment(c._id)}
                     >
@@ -137,12 +153,17 @@ function UserPhotos({ loginUser, photoIsUploaded, onUserNameChange }) {
                   )}
                 </List>
               ))}
-              <CommentDialog onCommentSumbit={() => fetchPhotosAndUser()} photo_id={photo._id} />
+              <CommentDialog
+                onCommentSumbit={() => fetchPhotosAndUser()}
+                photo_id={photo._id}
+              />
             </CardContent>
           </Card>
         </Grid>
       ))}
-    </Grid>)
+    </Grid>
+  );
+  
 }
 
 export default UserPhotos;
