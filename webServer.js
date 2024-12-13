@@ -204,7 +204,7 @@ app.post('/photos/new', hasSessionRecord, (request, response) => {
   });
 });
 
-// New-user registration
+// Creates a new user with the provided details. Validates the input and returns the created user's information.
 app.post('/user', (request, response) => {
   console.log("Received request body:", request.body);
   const newUser = request.body;
@@ -294,16 +294,10 @@ app.get("/test/:p1", async function (request, response) {
   }
 });
 
-function requireLogin(request, response, next) {
-  if (!request.session.userIdRecord) {
-      return response.status(401).json({ message: 'User not logged in.' });
-  }
-  return next();
-}
 
 
-// Fetch /user/list endpoint
-app.get('/user/list', requireLogin, async (request, response) => {
+// Retrieves a list of all users. Supports optional query parameters for filtering and pagination.
+app.get('/user/list', hasSessionRecord, async (request, response) => {
   try {
       const users = await User.find({}, 'first_name last_name _id').exec();
       response.status(200).json(users);
@@ -314,8 +308,8 @@ app.get('/user/list', requireLogin, async (request, response) => {
 });
 
 
-// Fetch /user/:id endpoint
-app.get("/user/:id", requireLogin, async function (request, response) {
+// Fetches details of a specific user by their unique ID. Returns user details or an error if not found.
+app.get("/user/:id", hasSessionRecord, async function (request, response) {
   const id = request.params.id;
   try {
     const user = await User.findById(id, "_id first_name last_name location description occupation");
@@ -327,8 +321,8 @@ app.get("/user/:id", requireLogin, async function (request, response) {
   }
 });
 
-// Fetch /photosOfUser/:id endpoint
-app.get("/photosOfUser/:id", requireLogin, async function (request, response) {
+// Retrieves the photos of the user based on their ID
+app.get("/photosOfUser/:id", hasSessionRecord, async function (request, response) {
   const id = request.params.id;
 
   try {
@@ -344,9 +338,10 @@ app.get("/photosOfUser/:id", requireLogin, async function (request, response) {
     const users = await User.find({ _id: { $in: userIds } }).select('_id first_name last_name').lean();
     const userMap = Object.fromEntries(users.map(user => [user._id.toString(), user]));
 
-    const likes = await Promise.all(photos.map(photo =>
-      Like.find({ photo_id: photo._id })
-    ));
+    const likes = await Promise.all(
+      photos.map(photo => Like.find({ photo_id: photo._id }))
+    );
+    
 
     const formattedPhotos = photos.map((photo, index) => ({
       _id: photo._id,
@@ -375,7 +370,8 @@ app.get("/photosOfUser/:id", requireLogin, async function (request, response) {
   }
 });
 
-app.get('/user/details/:id', requireLogin, async (request, response) => {
+// Retrieve the details of the user based on their ID 
+app.get('/user/details/:id', hasSessionRecord, async (request, response) => {
   const userId = request.params.id;
 
   try {
@@ -394,16 +390,17 @@ app.get('/user/details/:id', requireLogin, async (request, response) => {
       }
 
       // Determine the most recent photo
-      const recentPhoto = photos.reduce((latest, photo) =>
-          (!latest || photo.date_time > latest.date_time) ? photo : latest, null
-      );
+      const recentPhoto = photos.reduce((latest, photo) => {
+        return (!latest || photo.date_time > latest.date_time) ? photo : latest;
+      }, null);
 
       const recentPhotoLikes = await Like.find({ photo_id: recentPhoto._id });
 
       // Determine the most commented photo
-      const mostCommentedPhoto = photos.reduce((most, photo) =>
-          (!most || (photo.comments.length > most.comments.length)) ? photo : most, null
-      );
+      const mostCommentedPhoto = photos.reduce((most, photo) => {
+        return (!most || photo.comments.length > most.comments.length) ? photo : most;
+      }, null);
+
 
       const mostCommentedPhotoLikes = await Like.find({ photo_id: mostCommentedPhoto._id });
 
@@ -422,51 +419,7 @@ app.get('/user/details/:id', requireLogin, async (request, response) => {
   }
 });
 
-
-app.get('/user/details/:id', requireLogin, async (request, response) => {
-    const userId = request.params.id;
-
-    try {
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return response.status(400).send("Invalid user ID format");
-        }
-
-        // Fetch all photos for the user
-        const photos = await Photo.find({ user_id: userId }).select('_id file_name date_time comments');
-
-        if (!photos.length) {
-            return response.status(200).json({
-                recentPhoto: null,
-                mostCommentedPhoto: null
-            });
-        }
-
-        // Determine the most recent photo
-        const recentPhoto = photos.reduce((latest, photo) =>
-            (!latest || photo.date_time > latest.date_time) ? photo : latest, null
-        );
-
-        // Determine the most commented photo
-        const mostCommentedPhoto = photos.reduce((most, photo) =>
-            (!most || (photo.comments.length > most.comments.length)) ? photo : most, null
-        );
-
-        // Format the response
-        return response.status(200).json({
-            recentPhoto: recentPhoto
-                ? { _id: recentPhoto._id, file_name: recentPhoto.file_name, date_time: recentPhoto.date_time }
-                : null,
-            mostCommentedPhoto: mostCommentedPhoto
-                ? { _id: mostCommentedPhoto._id, file_name: mostCommentedPhoto.file_name, commentCount: mostCommentedPhoto.comments.length }
-                : null
-        });
-    } catch (error) {
-        console.error("Error fetching user details:", error);
-        return response.status(500).send("Internal server error");
-    }
-});
-
-
+// Retrieves the data on who mentioned the user
 app.get('/userMentions/:id', async function (request, response) {
   try {
     const userId = request.params.id;
@@ -489,15 +442,15 @@ app.get('/userMentions/:id', async function (request, response) {
       })
     );
 
-    response.status(200).send(mentionedPhotos);
+    return response.status(200).send(mentionedPhotos);
   } catch (err) {
     console.error('Error in /userMentions/:id:', err);
-    response.status(500).send('Internal server error.');
+    return response.status(500).send('Internal server error.');
   }
 });
 
 
-
+//Retrieves the user photos based on the location of where the user was mentioned
 app.post('/photosOfUser/mentions', async function (request, response) {
   try {
     const { user_id_arr: mentionedUsersIdArr, photoId } = request.body;
@@ -526,14 +479,15 @@ app.post('/photosOfUser/mentions', async function (request, response) {
     await photo.save();
 
     console.log("Photo after updating mentions:", photo);
-    response.status(200).json({ message: 'Mentions successfully registered.', mentions: photo.mentions });
+    return response.status(200).json({ message: 'Mentions successfully registered.', mentions: photo.mentions });
   } catch (err) {
     console.error('Error in /photosOfUser/mentions:', err);
-    response.status(500).send('Internal server error.');
+    return response.status(500).send('Internal server error.');
   }
 });
 
-app.delete("/photos/:id", requireLogin, async function(request, response) {
+// Deletes a photo identified by its unique ID. Ensures the photo exists and verifies user permissions.
+app.delete("/photos/:id", hasSessionRecord, async function(request, response) {
   const id = request.params.id;
   try {
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -560,10 +514,10 @@ app.delete("/photos/:id", requireLogin, async function(request, response) {
     console.error("Error deleting photo:", error);
     return response.status(500).send("Internal server error");
   }
-})
+});
 
 // This id corresponds to the comment_id but we need to find the corresponding photo
-app.delete("/comments/:id", requireLogin, async function (request, response) {
+app.delete("/comments/:id", hasSessionRecord, async function (request, response) {
   const id = request.params.id;
 
   try {
@@ -610,30 +564,41 @@ app.delete("/comments/:id", requireLogin, async function (request, response) {
 });
 
 
-app.delete('/user/me', requireLogin, async function(request, response) {
+// Deletes the user account and all of its associated information. 
+app.delete('/user/me', hasSessionRecord, async function (request, response) {
   const id = request.session.userIdRecord;
 
-  // Delete all photos associated with the user
-  await Photo.deleteMany({user_id: id});
+  try {
+    // Delete all photos associated with the user
+    await Photo.deleteMany({ user_id: id });
 
-  // Delete all comments associated with the user
-  const photos = await Photo.find({ comments: {$elemMatch: {user_id: id}} });
-  for (const photo of photos) {
-    photo.comments = photo.comments.filter(comment => comment.user_id.toString() !== id);
-    await photo.save();
+    // Find photos with comments by the user
+    const photos = await Photo.find({ comments: { $elemMatch: { user_id: id } } });
+
+    // Remove user comments from all relevant photos in parallel
+    await Promise.all(
+      photos.map(async (photo) => {
+        photo.comments = photo.comments.filter(comment => comment.user_id.toString() !== id);
+        await photo.save();
+      })
+    );
+
+    // Delete the user
+    await User.deleteOne({ _id: id });
+
+    // Destroy the session and send a response
+    return request.session.destroy(() => {
+      response.status(200).send();
+    });
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    return response.status(500).send('Internal server error.');
   }
+});
 
-  // Delete the user
-  await User.deleteOne({_id: id});
-  request.session.destroy(() => {
-    return response.status(200).send();
-  });
-
-  return response.status(200).send();
-})
 
 // Either like or unlike a photo
-app.post('/photos/:id/like', requireLogin, async function(request, response) {
+app.post('/photos/:id/like', hasSessionRecord, async function(request, response) {
   const photoId = request.params.id;
   if (!mongoose.Types.ObjectId.isValid(photoId)) {
     return response.status(400).send("Invalid photo ID format");
@@ -648,7 +613,7 @@ app.post('/photos/:id/like', requireLogin, async function(request, response) {
   // If the user has not liked the photo, like it
   await Like.create({user_id: request.session.userIdRecord, photo_id: photoId});
   return response.status(200).send();
-})
+});
 
 
 app.listen(3000, function () {
