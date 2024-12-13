@@ -44,14 +44,15 @@ export default class CommentDialog extends React.Component {
   handleClickOpen = () => this.setState({ open: true });
 
   // Close the comment dialog
-  handleClickClose = () =>
+  handleClickClose = () => (
     this.setState({
       open: false,
       comment: "",
       showDropdown: false,
       mentionedUsersIdArr: [],
-    });
-
+    })
+  );
+  
   // Reflect comment changes in the state
   handleCommentChange = (e) => {
     const { value } = e.target;
@@ -76,12 +77,12 @@ export default class CommentDialog extends React.Component {
     }
   
     // Validate mentionedUsersIdArr against actual mentions in the comment
-    const mentionedUsers = mentionedUsersIdArr.filter((id) =>
+    const mentionedUsers = mentionedUsersIdArr.filter((id) => (
       users.some((user) => {
         const fullName = `${user.first_name} ${user.last_name}`;
         return value.includes(`@${fullName}`) && user._id === id;
       })
-    );
+    ));    
   
     this.setState({ comment: value, mentionedUsersIdArr: mentionedUsers });
   };
@@ -131,9 +132,7 @@ export default class CommentDialog extends React.Component {
               user_id_arr: mentionedUsersIdArr,
             })
             .then(() => console.log("Mentions successfully updated."))
-            .catch((err) =>
-              console.error("Error updating mentions:", err)
-            );
+            .catch((err) => console.error("Error updating mentions:", err));
         }
 
         this.setState({ success: true }); // Show success message
@@ -172,19 +171,28 @@ export default class CommentDialog extends React.Component {
             />
 
             {/* Mention Dropdown */}
+            {/* Mention Dropdown */}
             {showDropdown && (
               <div className="mention-dropdown">
                 {filteredUsers.map((user) => (
                   <div
                     key={user._id}
                     className="mention-item"
+                    role="button"
+                    tabIndex="0"
                     onClick={() => this.handleMentionSelect(user)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        this.handleMentionSelect(user);
+                      }
+                    }}
                   >
                     {user.first_name} {user.last_name}
                   </div>
                 ))}
               </div>
             )}
+
           </DialogContent>
           <DialogActions>
             <Button onClick={this.handleClickClose} color="primary">
