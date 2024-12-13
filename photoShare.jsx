@@ -8,7 +8,7 @@ import './styles/main.css';
 import TopBar from './components/TopBar/topBar';
 import UserDetail from './components/UserDetail/userDetail';
 import UserList from './components/UserList/userList';
-import UserPhotos from './components/userPhotos/userPhotos';
+import UserPhotos from './components/UserPhotos/userPhotos';
 import LoginRegister from './components/LoginRegister/loginRegister';
 
 const root = createRoot(document.getElementById('photoshareapp'));
@@ -93,37 +93,37 @@ function PhotoShare() {
                 {/* User Detail View */}
                 <Route
                   path="/users/:userId"
-                  element={
+                  element={(
                     <UserDetail
                       onUserNameChange={handleUserNameChange}
                       onLoginUserChange={handleLoginUserChange}
                       loginUser={loginUser}
                     />
-                  }
+                  )}
                 />
 
                 {/* User Photos View */}
                 <Route
                   path="/photos/:userId"
-                  element={
+                  element={(
                     <UserPhotos
                       onUserNameChange={handleUserNameChange}
                       onLoginUserChange={handleLoginUserChange}
                       loginUser={loginUser}
                       photoIsUploaded={photoIsUploaded}
                     />
-                  }
+                  )}
                 />
 
                 {/* Login/Register View */}
                 <Route
                   path="/login-register"
-                  element={
+                  element={(
                     <LoginRegister
                       onLoginUserChange={handleLoginUserChange}
                       loginUser={loginUser}
                     />
-                  }
+                  )}
                 />
 
                 {/* Default route for unmatched paths */}
