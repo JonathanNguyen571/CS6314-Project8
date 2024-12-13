@@ -24,17 +24,34 @@ function UserDetail({ loginUser, onUserNameChange }) {
       })
       .catch((error) => {
         console.log("** Error fetching data: **", error.message);
-        setter([])
+        setter([]);
       });
   };
 
+  const showConfirmationDialog = (message) => {
+    return new Promise((resolve) => {
+      const confirmed = window.confirm(message); 
+      resolve(confirmed);
+    });
+  };
+
   async function handleDeleteUser() {
-    if (confirm("Are you sure you want to delete this user?")) {
+    const confirmed = await showConfirmationDialog("Are you sure you want to delete this user?");
+    if (confirmed) {
       axios.delete(`/user/me`).then(() => {
-        window.location = `/photo-share.html#/login-register`
+        window.location = `/photo-share.html#/login-register`;
       });
     }
   }
+  
+  const handleDeleteComment = (commentId) => {
+    axios.delete(`/comments/${commentId}`).then(() => {
+      setMentionedPhotos((prev) => (
+        prev.filter((photo) => photo.comment_id !== commentId)
+      ));
+    });
+  };
+  
 
 
   // Fetch user details
@@ -73,38 +90,35 @@ function UserDetail({ loginUser, onUserNameChange }) {
 
     return (
       <Grid container spacing={2}>
-  <Grid item xs={12}>
-    <Typography variant="h6" gutterBottom>
-      Photos where the user is mentioned:
-    </Typography>
-  </Grid>
-  {mentionedPhotos.map((photo, index) => (
-    <Grid item xs={12} sm={6} key={index}>
-      <img
-        src={`/images/${photo.file_name}`}
-        alt="Mentioned Photo"
-        className="thumbnail"
-      />
-      <Typography color="textSecondary">
-        Owner:{" "}
-        <Link to={`/users/${photo.owner_id}`}>
-          {photo.owner_name}
-        </Link>
-      </Typography>
-      {/* Add Delete Button */}
-      <Button
-        variant="outlined"
-        color="secondary"
-        size="small"
-        onClick={() => handleDeleteComment(photo.comment_id)} // Call delete handler
-        sx={{ mt: 1 }}
-      >
-        Delete Comment
-      </Button>
-    </Grid>
-  ))}
-</Grid>
-
+        <Grid item xs={12}>
+          <Typography variant="h6" gutterBottom>
+            Photos where the user is mentioned:
+          </Typography>
+        </Grid>
+        {mentionedPhotos.map((photo, index) => (
+          <Grid item xs={12} sm={6} key={index}>
+            <img 
+              src={`/images/${photo.file_name}`} 
+              alt="User mentioned" 
+              className="thumbnail" 
+            />
+            <Typography color="textSecondary">
+              Owner:{" "}
+              <Link to={`/users/${photo.owner_id}`}>{photo.owner_name}</Link>
+            </Typography>
+            {/* Add Delete Button */}
+            <Button
+              variant="outlined"
+              color="secondary"
+              size="small"
+              onClick={() => handleDeleteComment(photo.comment_id)} // Call delete handler
+              sx={{ mt: 1 }}
+            >
+              Delete Comment
+            </Button>
+          </Grid>
+        ))}
+      </Grid>
     );
   };
   
@@ -136,9 +150,11 @@ function UserDetail({ loginUser, onUserNameChange }) {
             <Typography variant="h6">Most Recent Photo</Typography>
             <img
               src={`/images/${recentPhoto.file_name}`}
-              alt="Recent Photo"
+              alt={`Recent upload by ${recentPhoto.owner_name}`}
               className="thumbnail"
-              onClick={() => (window.location.href = photoLink)}
+              onClick={() => {
+                window.location.href = photoLink;
+              }}
             />
             <Typography color="textSecondary">
               Uploaded: {new Date(recentPhoto.date_time).toLocaleString()}
@@ -166,9 +182,11 @@ function UserDetail({ loginUser, onUserNameChange }) {
             <Typography variant="h6">Most Commented Photo</Typography>
             <img
               src={`/images/${mostCommentedPhoto.file_name}`}
-              alt="Most Commented Photo"
+              alt={`Most commented upload by ${mostCommentedPhoto.owner_name}`}
               className="thumbnail"
-              onClick={() => (window.location.href = photoLink)}
+              onClick={() => {
+                window.location.href = photoLink;
+              }}
             />
             <Typography color="textSecondary">
               Comments: {mostCommentedPhoto.commentCount}
