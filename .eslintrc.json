@@ -58,6 +58,7 @@
     "prefer-const": "off",
     "no-useless-constructor": "off",
     "react/jsx-boolean-value": "off",
+    "no-alert": "off",
 
     // Overly strict style rules
     "arrow-parens": 0,
