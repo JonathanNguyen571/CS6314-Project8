@@ -67,6 +67,8 @@ Brief description to see the story in action:
 To like a photo, click the like button on the photo card.
 To unlike a photo, click the unlike button on the photo card.
 
+Total Story Points: 17 
+
 Marketing Video URL (ensure permissions are set to public viewing):
 https://youtu.be/prtqcUOUZ5E
 
