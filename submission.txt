@@ -66,6 +66,7 @@ Story points: 4
 Brief description to see the story in action:
 To like a photo, click the like button on the photo card.
 To unlike a photo, click the unlike button on the photo card.
+Each photo will have a count of the number of likes as well as having the photos sorted by the number of likes (most liked at the top).
 
 Total Story Points: 17 
 
