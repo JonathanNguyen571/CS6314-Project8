@@ -68,7 +68,7 @@ To like a photo, click the like button on the photo card.
 To unlike a photo, click the unlike button on the photo card.
 
 Marketing Video URL (ensure permissions are set to public viewing):
-<INSERT URL HERE>
+https://youtu.be/prtqcUOUZ5E
 
 Is it OK if we post your Marketing Video URL on the class discussion forum?
 Yes
